@@ -102,10 +102,27 @@ activation = {}
 def get_activation(name):
     def hook(model, input, output):
         activation[name] = output.detach()
-        return hook
+    return hook
 
 
 model.conv1.register_forward_hook(get_activation("conv1"))
+model.conv2.register_forward_hook(get_activation("conv2"))
 out = model(data)
 conv1 = activation["conv1"].data.cpu().numpy()
-print("conv1.shape:", conv1.shape)
+conv2 = activation["conv2"].data.cpu().numpy()
+
+x_tsne = TSNE(n_components=2).fit_transform(conv2)
+plt.figure(figsize=(12, 8))
+ax1 = plt.subplot(1, 1, 1)
+X = x_tsne[:, 0]
+Y = x_tsne[:, 1]
+ax1.set_xlim([min(X), max(X)])
+ax1.set_ylim([min(Y), max(Y)])
+for ii in range(x_tsne.shape[0]):
+    text = dataset.data.y.data.cpu().numpy()[ii]
+    ax1.text(X[ii], Y[ii, ], str(text), fontsize=5, bbox=dict(
+        boxstyle="round", facecolor=plt.cm.Set1(text), alpha=0.7))
+ax1.set_xlabel("TSNE Feature 1", size=13)
+ax1.set_ylabel("TSNE Feature 2", size=13)
+ax1.set_title("Original feature TSNE", size=14)
+plt.show()
